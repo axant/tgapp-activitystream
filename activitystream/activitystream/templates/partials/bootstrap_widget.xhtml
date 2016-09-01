@@ -1,0 +1,11 @@
+<div class="panel panel-success">
+  <div class="panel-heading">
+    <h3 class="panel-title">${panel_title}</h3>
+  </div>
+  <div class="panel-body" style="${panel_body_style}">
+    <div  py:for="idx, action in enumerate(actions)">
+      <span py:if="not timestamp_since">${action.timestamp_24_hh_mm[:-3]} - </span> <b>${action.actor}</b> ${action.verb} <span py:if="action.action_obj">${action.action_obj}</span> <b py:if="action.target">${action.target}</b> <span py:if="timestamp_since">${action.timestamp_since}</span>
+      <hr py:if="idx+1 != len(actions)"/>
+    </div>
+  </div>
+</div>
