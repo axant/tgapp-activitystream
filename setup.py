@@ -22,12 +22,12 @@ except IOError:
 
 setup(
     name='tgapp-activitystream',
-    version='0.1.0',
-    description='',
+    version='0.0.1',
+    description='Pluggable for create a simple activity stream.',
     long_description=README,
-    author='',
-    author_email='',
-    #url='',
+    author='AXANT',
+    author_email='tech@axant.it',
+    url='https://github.com/axant/tgapp-activitystream',
     keywords='turbogears2.application',
     packages=find_packages(exclude=['ez_setup']),
     install_requires=install_requires,
