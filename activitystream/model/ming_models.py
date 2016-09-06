@@ -8,7 +8,7 @@ from ming.odm.declarative import MappedClass
 from activitystream import model
 from activitystream.model import DBSession
 
-from tg.i18n import ugettext as _
+from tg.i18n import ugettext as _, lazy_ugettext as l_
 
 
 class Action(MappedClass):
@@ -84,11 +84,11 @@ class Action(MappedClass):
         if minutes <= 1:
             timestamp_since_ = _(u'less than 1 minute ago')
         elif minutes < 60:
-            timestamp_since_ = _(u'about %s minutes ago' % int(minutes))
+            timestamp_since_ = _(u'about %s minutes ago') % int(minutes)
         elif 60 <= minutes < 119:
             timestamp_since_ = _(u'about 1 hour ago')
         elif minutes < 60 * 24:
-            timestamp_since_ = _(u'about %s hours ago' % int(minutes/60))
+            timestamp_since_ = _(u'about %s hours ago') % int(minutes/60)
         else:
             timestamp_since_ = datetime.strftime(self.timestamp, '%x')
 
