@@ -22,7 +22,7 @@ except IOError:
 
 setup(
     name='tgapp-activitystream',
-    version='0.0.1',
+    version='0.0.2',
     description='Pluggable for create a simple activity stream.',
     long_description=README,
     author='AXANT',
