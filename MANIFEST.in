@@ -1,4 +1,5 @@
 recursive-include activitystream/public *
 recursive-include activitystream/templates *.xhtml
+recursive-include activitystream/i18n *
 global-exclude *.pyc
 
