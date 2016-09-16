@@ -47,13 +47,20 @@ class Action(MappedClass):
     def actor(self, default=None):
         if not (self.actor_type and self.actor_id):
             return default
-        return self.get_first(self.actor_type, self.actor_id)
+        entity = self.get_first(self.actor_type, self.actor_id)
+        return getattr(entity, 'as_str', str(entity))
 
     @property
     def target(self, default=None):
         if not (self.target_type and self.target_id):
             return default
-        return self.get_first(self.target_type, self.target_id)
+        entity = self.get_first(self.target_type, self.target_id)
+        return getattr(entity, 'as_str', str(entity))
+
+    @property
+    def target_link(self):
+        entity = self.get_first(self.target_type, self.target_id)
+        return getattr(entity, 'as_link', None)
 
     @property
     def action_obj(self, default=None):
@@ -73,7 +80,7 @@ class Action(MappedClass):
             filters={primary_key_.name: id_})
 
         entity = next(iter(results), None)
-        return str(entity)
+        return entity
 
     @property
     def timestamp_since(self):
