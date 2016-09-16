@@ -4,8 +4,6 @@ from tgext.pluggable import primary_key
 from activitystream import model
 from activitystream.model.ming_models import Action
 
-# TODO move to lib
-
 
 class ActionManager(object):
 
@@ -35,13 +33,9 @@ class ActionManager(object):
             desc=desc,
             **kwargs)
 
-        hooks.notify('googleplusauth.on_login', args=(action))
 
         return action
 
     def actor(self, obj, **kwargs):
-        """
-        Stream of most recent actions where obj is the actor.
-        Keyword arguments will be passed to Action.objects.filter
-        """
-        return obj.actor_actions.public(**kwargs)
+        pass
+
