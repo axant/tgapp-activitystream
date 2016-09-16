@@ -90,6 +90,8 @@ class Action(MappedClass):
 
         if minutes <= 1:
             timestamp_since_ = _(u'less than 1 minute ago')
+        elif minutes == 1:
+            timestamp_since_ = _(u'about 1 minute ago')
         elif minutes < 60:
             timestamp_since_ = _(u'about %s minutes ago') % int(minutes)
         elif 60 <= minutes < 119:

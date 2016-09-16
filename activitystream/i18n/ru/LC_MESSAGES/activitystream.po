@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ${package} 0.0.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2016-09-06 08:12+0200\n"
+"POT-Creation-Date: 2016-09-16 11:17+0200\n"
 "PO-Revision-Date: 2008-01-13 14:00+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -19,20 +19,24 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.3.4\n"
 
-#: activitystream/model/ming_models.py:85
+#: activitystream/model/ming_models.py:92
 msgid "less than 1 minute ago"
 msgstr ""
 
-#: activitystream/model/ming_models.py:87
+#: activitystream/model/ming_models.py:94
+msgid "about 1 minute ago"
+msgstr ""
+
+#: activitystream/model/ming_models.py:96
 #, python-format
 msgid "about %s minutes ago"
 msgstr ""
 
-#: activitystream/model/ming_models.py:89
+#: activitystream/model/ming_models.py:98
 msgid "about 1 hour ago"
 msgstr ""
 
-#: activitystream/model/ming_models.py:91
+#: activitystream/model/ming_models.py:100
 #, python-format
 msgid "about %s hours ago"
 msgstr ""
@@ -53,10 +57,13 @@ msgstr ""
 msgid "tgapp.activitystream! ;)"
 msgstr ""
 
-#: activitystream/templates/partials/bootstrap_widget.xhtml:7
-msgid " - "
+#: activitystream/templates/partials/bootstrap_widget.xhtml:8
+msgid " -"
 msgstr ""
 
 #~ msgid "Hello World!"
 #~ msgstr "Привет мир!"
+
+#~ msgid " - "
+#~ msgstr ""
 
