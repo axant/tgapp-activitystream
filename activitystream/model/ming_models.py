@@ -37,6 +37,9 @@ class Action(MappedClass):
     action_obj_type = FieldProperty(s.String)
     action_obj_id = FieldProperty(s.ObjectId)
 
+    _recipients = FieldProperty(s.Array(
+        s.Object(fields={'type': s.String, '_id': s.ObjectId})))
+
     timestamp = FieldProperty(s.DateTime, if_missing=datetime.utcnow)
 
     @property
@@ -68,19 +71,21 @@ class Action(MappedClass):
             return default
         return self.get_first(self.action_obj_type, self.action_obj_id)
 
+    @property
+    def recipients(self, default=None):
+        if not self._recipients:
+            return default
+        return (self.get_first(r.type, r._id) for r in self._recipients)
+
     @staticmethod
     def get_first(type_, id_):
-        from tgext.pluggable import app_model, primary_key
-
-        model_ = getattr(app_model, type_)
-        primary_key_ = primary_key(model_)
-
-        _, results = model.provider.query(
+        model_ = model.provider.get_entity(type_)
+        primary_field_ = model.provider.get_primary_field(model_)
+        return model.provider.get_obj(
             model_,
-            filters={primary_key_.name: id_})
+            {primary_field_: id_}
+        )
 
-        entity = next(iter(results), None)
-        return entity
 
     @property
     def timestamp_since(self):
@@ -128,23 +133,3 @@ class Action(MappedClass):
 
         return str_
 
-
-
-
-'''
-class Follow(MappedClass):
-    class __mongometa__:
-        session = DBSession
-        name = 'activity_stream_follow'
-        #indexes = [(('activated', ), ('code', ))]
-
-    _id = FieldProperty(s.ObjectId)
-
-    following_type = FieldProperty(s.String)
-    following_id = FieldProperty(s.ObjectId)
-
-    follower_type = FieldProperty(s.String)
-    follower_id = FieldProperty(s.ObjectId)
-
-    started = FieldProperty(s.DateTime, if_missing=datetime.utcnow())
-'''
