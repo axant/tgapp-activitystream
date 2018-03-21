@@ -1,24 +1,31 @@
-from datetime import datetime, timedelta
-
-from markupsafe import Markup
-from ming import schema as s
-from ming.odm import FieldProperty
-from ming.odm.declarative import MappedClass
+from datetime import datetime
 
 from activitystream import model
-from activitystream.model import DBSession
+from ming import schema as s
+from ming.odm import FieldProperty, ForeignIdProperty, RelationProperty
+from ming.odm.declarative import MappedClass
+from pymongo import DESCENDING
 
-from tg.i18n import ugettext as _, lazy_ugettext as l_
+from tg.i18n import ugettext as _
+from tgext.pluggable import instance_primary_key
+
+
+def get_first(type_, id_):
+    model_ = model.provider.get_entity(type_)
+    primary_field_ = model.provider.get_primary_field(model_)
+    return model.provider.get_obj(
+        model_,
+        {primary_field_: id_}
+    )
 
 
 class Action(MappedClass):
     class __mongometa__:
-        session = DBSession
+        session = model.DBSession
         name = 'activity_stream_action'
         indexes = [
             (('actor_id', ), ('timestamp', -1)),
             ('actor_type', ),
-
         ]
 
     _id = FieldProperty(s.ObjectId)
@@ -37,9 +44,6 @@ class Action(MappedClass):
     action_obj_type = FieldProperty(s.String)
     action_obj_id = FieldProperty(s.ObjectId)
 
-    _recipients = FieldProperty(s.Array(
-        s.Object(fields={'type': s.String, '_id': s.ObjectId})))
-
     timestamp = FieldProperty(s.DateTime, if_missing=datetime.utcnow)
 
     @property
@@ -50,42 +54,26 @@ class Action(MappedClass):
     def actor(self, default=None):
         if not (self.actor_type and self.actor_id):
             return default
-        entity = self.get_first(self.actor_type, self.actor_id)
+        entity = get_first(self.actor_type, self.actor_id)
         return getattr(entity, 'as_str', str(entity))
 
     @property
     def target(self, default=None):
         if not (self.target_type and self.target_id):
             return default
-        entity = self.get_first(self.target_type, self.target_id)
+        entity = get_first(self.target_type, self.target_id)
         return getattr(entity, 'as_str', str(entity))
 
     @property
     def target_link(self):
-        entity = self.get_first(self.target_type, self.target_id)
+        entity = get_first(self.target_type, self.target_id)
         return getattr(entity, 'as_link', None)
 
     @property
     def action_obj(self, default=None):
         if not (self.action_obj_type and self.action_obj_id):
             return default
-        return self.get_first(self.action_obj_type, self.action_obj_id)
-
-    @property
-    def recipients(self, default=None):
-        if not self._recipients:
-            return default
-        return (self.get_first(r.type, r._id) for r in self._recipients)
-
-    @staticmethod
-    def get_first(type_, id_):
-        model_ = model.provider.get_entity(type_)
-        primary_field_ = model.provider.get_primary_field(model_)
-        return model.provider.get_obj(
-            model_,
-            {primary_field_: id_}
-        )
-
+        return get_first(self.action_obj_type, self.action_obj_id)
 
     @property
     def timestamp_since(self):
@@ -108,6 +96,9 @@ class Action(MappedClass):
 
         return timestamp_since_
 
+    @property
+    def recipients(self):
+        return Recipient.query.find({'action_id': self._id})
 
     @classmethod
     def render_str(cls, action, **kw):
@@ -133,3 +124,34 @@ class Action(MappedClass):
 
         return str_
 
+
+class Recipient(MappedClass):
+    class __mongometa__:
+        session = model.DBSession
+        name = 'activity_stream_recipients'
+        indexes = [
+            (('recipient_id', ), ('seen', )),
+            ('action_id', ),
+        ]
+
+    _id = FieldProperty(s.ObjectId)
+
+    recipient_id = FieldProperty(s.ObjectId)
+    recipient_type = FieldProperty(s.String)
+
+    action_id = ForeignIdProperty(Action)
+    action = RelationProperty(Action)
+
+    seen = FieldProperty(s.Bool, if_missing=False)
+
+    @property
+    def recipient(self, default=None):
+        if not (self.recipient_type and self.recipient_id):
+            return default
+        return get_first(self.recipient_type, self.recipient_id)
+
+    @classmethod
+    def not_seen(cls, recipient):
+        return cls.query.find({'recipient_id': instance_primary_key(recipient),
+                               'seen': False}).sort('_id', DESCENDING)
+        # sorting on _id should be enough and I can't sort on action.timestamp
