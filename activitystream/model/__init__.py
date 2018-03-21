@@ -12,7 +12,6 @@ log = logging.getLogger(TGAPP_NAME)
 DBSession = PluggableSession()
 
 Action = None
-Recipient = None
 
 
 def init_model(app_session):
@@ -21,14 +20,13 @@ def init_model(app_session):
 
 def import_models():
     global Action
-    global Recipient
     use_sqlalchemy = config.get('use_sqlalchemy')
     if use_sqlalchemy:
         raise NotImplementedError("tgapp-activitystream is not implemented for sqlalchemy yet.")
         #   from .sqla_models import Registration
         pass
     else:
-        from .ming_models import Action, Recipient
+        from .ming_models import Action
 
 
 class PluggableSproxProvider(object):

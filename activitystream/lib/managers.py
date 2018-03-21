@@ -1,4 +1,3 @@
-from tg import hooks
 from tgext.pluggable import primary_key, instance_primary_key
 
 from activitystream import model
@@ -13,7 +12,13 @@ class ActionManager(object):
         target_id = primary_key(target.__class__).name if target else ''
         action_obj_id = primary_key(action_obj.__class__).name if action_obj else ''
 
-        a = model.provider.create(
+        _recipients = []
+        if recipients:
+            _recipients = [{'recipient_type': r.__class__.__name__,
+                            'recipient_id': instance_primary_key(r),
+                            'seen': False} for r in recipients]
+
+        return model.provider.create(
             model.Action,
             dict(
                 actor_type=actor.__class__.__name__,
@@ -25,22 +30,9 @@ class ActionManager(object):
                 action_obj_id=getattr(action_obj, action_obj_id, None),
                 description=description,
                 extra=extra,
+                _recipients=_recipients,
             )
         )
-
-        if recipients:
-            for r in recipients:
-                model.provider.create(
-                    model.Recipient,
-                    dict(
-                        recipient_type=r.__class__.__name__,
-                        recipient_id=instance_primary_key(r),
-                        action=a,
-                        seen=False,
-                    )
-                )
-
-        return a
 
     def get_actions(self, limit=None, order_by='timestamp', desc=True, **kwargs):
         action = model.provider.query(
@@ -55,5 +47,5 @@ class ActionManager(object):
     def actor(self, obj, **kwargs):
         pass
 
-    def not_seen(self, recipient):
-        return model.Recipient.not_seen(recipient)
+    def not_seen_by(self, recipient):
+        return model.Action.not_seen_by(recipient)

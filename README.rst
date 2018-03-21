@@ -49,10 +49,10 @@ It's up to you to choose how to dispatch them.
 Assuming the third user wants to know if it have notifications not yet seen::
 
     u3 = model.User.query.find().all()[2]
-    [r.action for r in am.not_seen(u3).all()]
+    actions = am.not_seen(u3).all()
     # And if you want to mark a notification as seen just set the flag to True
-    am.not_seen(u3).first().seen = True
-    # please remember that if you're testing in a tgshell you need to flush the session
+    action = actions[0]
+    action.mark_as_seen_by(u3)
 
 
 Fields Explanation
@@ -67,4 +67,3 @@ Fields Explanation
 - **extra**: string that you can use for example to store a json with extra informations
 - **recipients**: list of references to who is expected to receive
   a notification from this activity. references can be of different entities.
-  Them are actually stored in an other model

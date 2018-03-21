@@ -24,8 +24,10 @@ class Action(MappedClass):
         session = model.DBSession
         name = 'activity_stream_action'
         indexes = [
-            (('actor_id', ), ('timestamp', -1)),
+            (('actor_id', ), ('timestamp', DESCENDING)),
             ('actor_type', ),
+            (('_recipients.recipient_id', ), ('_recipients.seen'), ('timestamp', DESCENDING)),
+            ('_recipients.recipient_type', ),
         ]
 
     _id = FieldProperty(s.ObjectId)
@@ -45,6 +47,11 @@ class Action(MappedClass):
     action_obj_id = FieldProperty(s.ObjectId)
 
     timestamp = FieldProperty(s.DateTime, if_missing=datetime.utcnow)
+
+    _recipients = FieldProperty(s.Array(
+        s.Object(fields={'recipient_type': s.String,
+                         'recipient_id': s.ObjectId,
+                         'seen': s.Bool})))
 
     @property
     def timestamp_24_hh_mm(self):
@@ -98,7 +105,8 @@ class Action(MappedClass):
 
     @property
     def recipients(self):
-        return Recipient.query.find({'action_id': self._id})
+        return ({'recipient': get_first(r.recipient_type, r.recipient_id),
+                 'seen': r.seen} for r in self._recipients)
 
     @classmethod
     def render_str(cls, action, **kw):
@@ -124,34 +132,16 @@ class Action(MappedClass):
 
         return str_
 
-
-class Recipient(MappedClass):
-    class __mongometa__:
-        session = model.DBSession
-        name = 'activity_stream_recipients'
-        indexes = [
-            (('recipient_id', ), ('seen', )),
-            ('action_id', ),
-        ]
-
-    _id = FieldProperty(s.ObjectId)
-
-    recipient_id = FieldProperty(s.ObjectId)
-    recipient_type = FieldProperty(s.String)
-
-    action_id = ForeignIdProperty(Action)
-    action = RelationProperty(Action)
-
-    seen = FieldProperty(s.Bool, if_missing=False)
-
-    @property
-    def recipient(self, default=None):
-        if not (self.recipient_type and self.recipient_id):
-            return default
-        return get_first(self.recipient_type, self.recipient_id)
-
     @classmethod
-    def not_seen(cls, recipient):
-        return cls.query.find({'recipient_id': instance_primary_key(recipient),
-                               'seen': False}).sort('_id', DESCENDING)
-        # sorting on _id should be enough and I can't sort on action.timestamp
+    def not_seen_by(cls, recipient):
+        return cls.query.find({'_recipients.recipient_id': instance_primary_key(recipient),
+                               '_recipients.seen': False}).sort('timestamp', DESCENDING)
+
+    def mark_as_seen_by(self, recipient):
+        Action.query.update(
+            {
+                '_id': self._id,
+                '_recipients.recipient_id': instance_primary_key(recipient)
+            },
+            {'$set': {'_recipients.$.seen': True}}
+        )
