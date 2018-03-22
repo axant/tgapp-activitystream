@@ -5,7 +5,7 @@ activitystream is a Pluggable application for TurboGears2 for create a simple ac
 
 The activity stream is intended to be used as base layer for a **notification** system
 
-Currently this pluggable works only with *ming* fell free to submit a pull request with *sqlalchemy* support
+Currently this pluggable works only with **ming** fell free to submit a pull request with *sqlalchemy* support
 
 Installing
 ----------
@@ -81,21 +81,21 @@ then you can get the latest 10 notifications of a recipient with::
 Exposed Controllers
 -------------------
 
-if you don't like your urls to start with `activitystream` just ``plug`` with a new app_id
+if you don't like your urls to start with activitystream just ``plug`` with a new app_id
 
-- **/activitystream/ajax_update_last_seen_of_a_recipient**: call this through ajax with `_type`
-  and `_id` of the recipient to update `last_activity_seen`.
+- **/activitystream/ajax_update_last_seen_of_a_recipient**: call this through ajax with ``_type``
+  and ``_id`` of the recipient to update ``last_activity_seen``.
   should return a json with the last_activity_seen before the update
 
-- **/activitystream/see**: updates `last_activity_seen` of the logged in user
-  and redirects to the given `target_link`
+- **/activitystream/see**: updates ``last_activity_seen`` of the logged in user
+  and redirects to the given ``target_link``
 
 Notifications Rendering
 -----------------------
 
-This is up to you. I suggest to use `tg.render_template` with `tg_cache`
+This is up to you. I suggest to use ``tg.render_template`` with ``tg_cache``
 
-adding in `myproject.lib.helpers`::
+adding in ``myproject.lib.helpers``::
 
     from activitystream import am
     from tg import render_template
@@ -117,7 +117,7 @@ and in the template where you want your notifications to being displayed::
       )}<hr/></li>
     </py:for>
 
-meanwhile your `myproject.templates.notification` may look like::
+meanwhile your ``myproject.templates.notification`` may look like::
 
     <a href="${h.plug_url('activitystream', '/see', params={'target_link': n.target_link})}">
       <img src="${n.actor.avatar_url}"/>
