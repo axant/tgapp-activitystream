@@ -12,7 +12,7 @@ class ActionManager(object):
         target_id = primary_key(target.__class__).name if target else ''
         action_obj_id = primary_key(action_obj.__class__).name if action_obj else ''
 
-        _recipients = []
+        _recipients = None
         if recipients:
             _recipients = [{'recipient_type': r.__class__.__name__,
                             'recipient_id': instance_primary_key(r),
@@ -49,3 +49,6 @@ class ActionManager(object):
 
     def not_seen_by(self, recipient):
         return model.Action.not_seen_by(recipient)
+
+    def mark_as_seen(self, _id, recipient):
+        return model.Action.mark_as_seen(_id, recipient)

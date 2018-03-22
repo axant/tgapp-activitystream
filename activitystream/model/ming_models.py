@@ -2,15 +2,17 @@ from datetime import datetime
 
 from activitystream import model
 from ming import schema as s
-from ming.odm import FieldProperty, ForeignIdProperty, RelationProperty
+from ming.odm import FieldProperty
 from ming.odm.declarative import MappedClass
 from pymongo import DESCENDING
+from bson import ObjectId
 
 from tg.i18n import ugettext as _
+from tg.decorators import cached_property
 from tgext.pluggable import instance_primary_key
 
 
-def get_first(type_, id_):
+def get_obj(type_, id_):
     model_ = model.provider.get_entity(type_)
     primary_field_ = model.provider.get_primary_field(model_)
     return model.provider.get_obj(
@@ -57,30 +59,30 @@ class Action(MappedClass):
     def timestamp_24_hh_mm(self):
         return datetime.strftime(self.timestamp, '%X')
 
-    @property
+    @cached_property
     def actor(self, default=None):
         if not (self.actor_type and self.actor_id):
             return default
-        entity = get_first(self.actor_type, self.actor_id)
-        return getattr(entity, 'as_str', str(entity))
+        entity = get_obj(self.actor_type, self.actor_id)
+        return getattr(entity, 'as_str', entity)
 
-    @property
+    @cached_property
     def target(self, default=None):
         if not (self.target_type and self.target_id):
             return default
-        entity = get_first(self.target_type, self.target_id)
-        return getattr(entity, 'as_str', str(entity))
+        entity = get_obj(self.target_type, self.target_id)
+        return getattr(entity, 'as_str', entity)
 
     @property
     def target_link(self):
-        entity = get_first(self.target_type, self.target_id)
+        entity = get_obj(self.target_type, self.target_id)
         return getattr(entity, 'as_link', None)
 
     @property
     def action_obj(self, default=None):
         if not (self.action_obj_type and self.action_obj_id):
             return default
-        return get_first(self.action_obj_type, self.action_obj_id)
+        return get_obj(self.action_obj_type, self.action_obj_id)
 
     @property
     def timestamp_since(self):
@@ -105,7 +107,7 @@ class Action(MappedClass):
 
     @property
     def recipients(self):
-        return ({'recipient': get_first(r.recipient_type, r.recipient_id),
+        return ({'recipient': get_obj(r.recipient_type, r.recipient_id),
                  'seen': r.seen} for r in self._recipients)
 
     @classmethod
@@ -134,13 +136,16 @@ class Action(MappedClass):
 
     @classmethod
     def not_seen_by(cls, recipient):
-        return cls.query.find({'_recipients.recipient_id': instance_primary_key(recipient),
-                               '_recipients.seen': False}).sort('timestamp', DESCENDING)
+        return cls.query.find({'_recipients': {'$elemMatch': {
+            'recipient_id': instance_primary_key(recipient),
+            'seen': False
+        }}}).sort('timestamp', DESCENDING)
 
-    def mark_as_seen_by(self, recipient):
-        Action.query.update(
+    @classmethod
+    def mark_as_seen(cls, _id, recipient):
+        cls.query.update(
             {
-                '_id': self._id,
+                '_id': ObjectId(_id),
                 '_recipients.recipient_id': instance_primary_key(recipient)
             },
             {'$set': {'_recipients.$.seen': True}}
