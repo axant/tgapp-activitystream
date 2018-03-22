@@ -49,8 +49,5 @@ class ActionManager(object):
     def count_not_seen_by_recipient(cls, recipient):
         return model.Action.count_not_seen_by_recipient(recipient)
 
-    def actor(self, obj, **kwargs):
-        pass
 
-    def not_seen_by(self, recipient):
-        return model.Action.not_seen_by(recipient)
+am = ActionManager()

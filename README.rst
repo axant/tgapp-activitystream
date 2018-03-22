@@ -67,7 +67,7 @@ Add in your recipient model (probably your User model)::
     from datetime import datetime
     last_activity_seen = FieldProperty(s.DateTime, if_missing=datetime.utcnow())
 
-then you can get the latest 10 notifications of a recipient with
+then you can get the latest 10 notifications of a recipient with::
 
     recipient = model.User.query.find().all()[1]
     actions = am.get_by_recipient(recipient).limit(10).all()
@@ -89,3 +89,43 @@ if you don't like your urls to start with `activitystream` just ``plug`` with a 
 
 - **/activitystream/see**: updates `last_activity_seen` of the logged in user
   and redirects to the given `target_link`
+
+Notifications Rendering
+-----------------------
+
+This is up to you. I suggest to use `tg.render_template` with `tg_cache`
+
+adding in `myproject.lib.helpers`::
+
+    from activitystream import am
+    from tg import render_template
+    def notification_cache(n):
+        return {
+            'cache_key': n._id,  # this is really important
+            'cache_expire': 604800,  # a week
+            'cache_type': 'memory',
+        }
+
+
+and in the template where you want your notifications to being displayed::
+
+    <py:for each="n in h.am.get_by_recipient(request.identity['user']).limit(10)">
+      <li>${h.render_template(
+        {'n': n, 'tg_cache': h.notification_cache(n)},
+        'kajiki',
+        'myproject.templates.notification'
+      )}<hr/></li>
+    </py:for>
+
+meanwhile your `myproject.templates.notification` may look like::
+
+    <a href="${h.plug_url('activitystream', '/see', params={'target_link': n.target_link})}">
+      <img src="${n.actor.avatar_url}"/>
+      <div class="content">
+        <b>${n.actor.display_name}</b> ${_(n.verb)} <i>${n.target}</i>
+        <div>${n.timestamp_since}</div>
+      </div>
+    </a>
+
+if your notification needs to be rendered differently based on the recipient then you have to use
+another caching strategy
