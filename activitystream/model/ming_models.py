@@ -5,7 +5,6 @@ from ming import schema as s
 from ming.odm import FieldProperty
 from ming.odm.declarative import MappedClass
 from pymongo import DESCENDING
-from bson import ObjectId
 
 from tg.i18n import ugettext as _
 from tg.decorators import cached_property
@@ -28,7 +27,7 @@ class Action(MappedClass):
         indexes = [
             (('actor_id', ), ('timestamp', DESCENDING)),
             ('actor_type', ),
-            (('_recipients.recipient_id', ), ('_recipients.seen'), ('timestamp', DESCENDING)),
+            (('_recipients.recipient_id', ), ('timestamp', DESCENDING)),
             ('_recipients.recipient_type', ),
         ]
 
@@ -50,10 +49,7 @@ class Action(MappedClass):
 
     timestamp = FieldProperty(s.DateTime, if_missing=datetime.utcnow)
 
-    _recipients = FieldProperty(s.Array(
-        s.Object(fields={'recipient_type': s.String,
-                         'recipient_id': s.ObjectId,
-                         'seen': s.Bool})))
+    _recipients = FieldProperty(s.Array(s.Object(fields={'_type': s.String, '_id': s.ObjectId})))
 
     @property
     def timestamp_24_hh_mm(self):
@@ -107,8 +103,24 @@ class Action(MappedClass):
 
     @property
     def recipients(self):
-        return ({'recipient': get_obj(r.recipient_type, r.recipient_id),
-                 'seen': r.seen} for r in self._recipients)
+        return (get_obj(r._type, r._id) for r in self._recipients)
+
+    @classmethod
+    def get_by_recipient(cls, recipient):
+        return cls.query.find({
+            '$or': [{'_recipients._id': instance_primary_key(recipient)},
+                    {'_recipients': {'$eq': None}}]
+        }).sort('timestamp', DESCENDING)
+
+    @classmethod
+    def count_not_seen_by_recipient(cls, recipient):
+        return cls.query.find({
+            '$or': [
+                {'_recipients._id': instance_primary_key(recipient)},
+                {'_recipients': {'$eq': None}},
+            ],
+            'timestamp': {'$gt': recipient.last_activity_seen},
+        }).count()
 
     @classmethod
     def render_str(cls, action, **kw):
@@ -133,20 +145,3 @@ class Action(MappedClass):
             time=timestamp_since or timestamp_format(action.timestamp))
 
         return str_
-
-    @classmethod
-    def not_seen_by(cls, recipient):
-        return cls.query.find({'_recipients': {'$elemMatch': {
-            'recipient_id': instance_primary_key(recipient),
-            'seen': False
-        }}}).sort('timestamp', DESCENDING)
-
-    @classmethod
-    def mark_as_seen(cls, _id, recipient):
-        cls.query.update(
-            {
-                '_id': ObjectId(_id),
-                '_recipients.recipient_id': instance_primary_key(recipient)
-            },
-            {'$set': {'_recipients.$.seen': True}}
-        )

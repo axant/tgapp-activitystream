@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 """Main Controller"""
-from tg import TGController
-from tg import expose, redirect, request
-
-from activitystream import ActionManager
-
-
-am = ActionManager()
+from datetime import datetime
+from tg import TGController, expose, request, redirect
+from tg.predicates import not_anonymous
 
 
 class RootController(TGController):
+    allow_only = not_anonymous()
+
+    @expose('json')
+    def ajax_update_last_seen_of_a_recipient(self):
+        result = {'last_activity_seen': request.identity['user'].last_activity_seen}
+        request.identity['user'].last_activity_seen = datetime.utcnow()
+        return result
+
     @expose()
-    def see(self, _id, target_link):
-        am.mark_as_seen(_id, request.identity['user'])
+    def see(self, target_link):
+        request.identity['user'].last_activity_seen = datetime.utcnow()
         return redirect(target_link)

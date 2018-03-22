@@ -46,15 +46,6 @@ When you want to create an activity you should do something like::
 Then you may want to notify the activity to the recipients.
 It's up to you to choose how to dispatch them.
 
-Assuming the third user wants to know if it have notifications not yet seen::
-
-    u3 = model.User.query.find().all()[2]
-    actions = am.not_seen(u3).all()
-    # And if you want to mark a notification as seen for a recipient
-    action = actions[0]
-    am.mark_as_seen(action._id, u3)
-
-
 Fields Explanation
 -------------------
 
@@ -68,10 +59,33 @@ Fields Explanation
 - **recipients**: list of references to who is expected to receive
   a notification from this activity. references can be of different entities.
 
+Not Seen (counter of unread notifications)
+------------------------------------------
+
+Add in your recipient model (probably your User model)::
+
+    from datetime import datetime
+    last_activity_seen = FieldProperty(s.DateTime, if_missing=datetime.utcnow())
+
+then you can get the latest 10 notifications of a recipient with
+
+    recipient = model.User.query.find().all()[1]
+    actions = am.get_by_recipient(recipient).limit(10).all()
+    # and if you want a counter of unread notifications call
+    count = am.count_not_seen_by_recipient(recipient)
+    # you can check if the recipient have seen a notification with
+    not_seen = actions[0].timestamp > recipient.last_activity_seen
+    # don't forget to update your recipient when him reads his notifications
+    recipient.last_activity_seen = datetime.utcnow()
+
 Exposed Controllers
 -------------------
 
 if you don't like your urls to start with `activitystream` just ``plug`` with a new app_id
 
-- **/activitystream/see**: marks a notification as seen for the logged in user and redirects
-  to the given target_link
+- **/activitystream/ajax_update_last_seen_of_a_recipient**: call this through ajax with `_type`
+  and `_id` of the recipient to update `last_activity_seen`.
+  should return a json with the last_activity_seen before the update
+
+- **/activitystream/see**: updates `last_activity_seen` of the logged in user
+  and redirects to the given `target_link`

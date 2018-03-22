@@ -14,9 +14,8 @@ class ActionManager(object):
 
         _recipients = None
         if recipients:
-            _recipients = [{'recipient_type': r.__class__.__name__,
-                            'recipient_id': instance_primary_key(r),
-                            'seen': False} for r in recipients]
+            _recipients = [{'_type': r.__class__.__name__,
+                            '_id': instance_primary_key(r)} for r in recipients]
 
         return model.provider.create(
             model.Action,
@@ -44,11 +43,14 @@ class ActionManager(object):
 
         return action
 
+    def get_by_recipient(cls, recipient):
+        return model.Action.get_by_recipient(recipient)
+
+    def count_not_seen_by_recipient(cls, recipient):
+        return model.Action.count_not_seen_by_recipient(recipient)
+
     def actor(self, obj, **kwargs):
         pass
 
     def not_seen_by(self, recipient):
         return model.Action.not_seen_by(recipient)
-
-    def mark_as_seen(self, _id, recipient):
-        return model.Action.mark_as_seen(_id, recipient)
